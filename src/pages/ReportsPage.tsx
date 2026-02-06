@@ -15,11 +15,17 @@ import { format } from 'date-fns';
 import { 
   BarChart, 
   Bar, 
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer 
+  ResponsiveContainer,
+  Legend
 } from 'recharts';
 
 const ReportsPage: React.FC = () => {
@@ -30,14 +36,23 @@ const ReportsPage: React.FC = () => {
   const requestsYTD = approvedRequests.length;
   const totalResidents = residents.filter(r => r.status === 'Active').length;
 
-  // Monthly data for chart
+  // Monthly data for charts
   const monthlyData = [
-    { name: 'Jan', certificates: 5 },
-    { name: 'Feb', certificates: 8 },
-    { name: 'Mar', certificates: 12 },
-    { name: 'Apr', certificates: 7 },
-    { name: 'May', certificates: 10 },
-    { name: 'Jun', certificates: 6 },
+    { name: 'Jan', certificates: 5, residents: 45 },
+    { name: 'Feb', certificates: 8, residents: 48 },
+    { name: 'Mar', certificates: 12, residents: 52 },
+    { name: 'Apr', certificates: 7, residents: 55 },
+    { name: 'May', certificates: 10, residents: 58 },
+    { name: 'Jun', certificates: 6, residents: 60 },
+  ];
+
+  // Pie chart data for certificate types
+  const certificateTypeData = [
+    { name: 'Barangay Clearance', value: 35, color: '#3b82f6' },
+    { name: 'Certificate of Residency', value: 25, color: '#22c55e' },
+    { name: 'Certificate of Indigency', value: 20, color: '#eab308' },
+    { name: 'Business Permit', value: 15, color: '#ef4444' },
+    { name: 'Others', value: 5, color: '#8b5cf6' },
   ];
 
   return (
@@ -85,25 +100,95 @@ const ReportsPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Chart */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Monthly Certificate Issuance (2024)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="name" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip />
-                <Bar dataKey="certificates" fill="#0ab59e" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Bar Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Monthly Certificate Issuance (Bar Chart)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                  <YAxis stroke="#6b7280" fontSize={12} />
+                  <Tooltip />
+                  <Bar dataKey="certificates" fill="hsl(170, 50%, 40%)" radius={[4, 4, 0, 0]} name="Certificates" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Line Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Population Growth Trend (Line Chart)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                  <YAxis stroke="#6b7280" fontSize={12} />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="residents" 
+                    stroke="hsl(220, 70%, 50%)" 
+                    strokeWidth={3}
+                    dot={{ fill: 'hsl(220, 70%, 50%)', strokeWidth: 2, r: 5 }}
+                    name="Residents"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="certificates" 
+                    stroke="hsl(145, 55%, 42%)" 
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(145, 55%, 42%)', strokeWidth: 2, r: 4 }}
+                    name="Certificates"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pie Chart */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Certificate Types Distribution (Pie Chart)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-72 flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={certificateTypeData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={3}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={true}
+                  >
+                    {certificateTypeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Certificate Log */}
       <Card>
