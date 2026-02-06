@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import logo from '@/assets/logo.png';
+import barangayHall from '@/assets/barangay-hall.jpg';
 
 type AuthView = 'role-selection' | 'official-login' | 'resident-login' | 'resident-signup';
 
@@ -133,7 +134,15 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 relative"
+      style={{
+        backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${barangayHall})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
       {/* Role Selection */}
       {view === 'role-selection' && (
         <Card className="w-full max-w-md animate-fade-in">

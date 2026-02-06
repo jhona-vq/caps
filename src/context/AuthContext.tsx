@@ -75,9 +75,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } else {
       const resident = residents.find(
-        (r) => r.email.toLowerCase() === email.toLowerCase() && r.password === password && r.status === 'Active'
+        (r) => r.email.toLowerCase() === email.toLowerCase() && r.password === password
       );
       if (resident) {
+        if (resident.status === 'Pending Approval') {
+          return false; // Will show pending message
+        }
         setCurrentUser(resident);
         setUserRole('resident');
         return true;
@@ -101,7 +104,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newResident: Resident = {
       ...residentData,
       id: Date.now().toString(),
-      status: 'Pending Approval',
+      status: 'Active', // Auto-approve for now (demo purposes)
       createdAt: new Date(),
     };
     setResidents([...residents, newResident]);
