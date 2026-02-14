@@ -138,58 +138,62 @@ const ResidentPortal: React.FC = () => {
                 </DialogHeader>
                 <form onSubmit={handleSubmitRequest} className="space-y-4">
                   <div>
-                    <h4 className="font-semibold mb-3">Applicant Details</h4>
-                    <div className="space-y-3">
-                      <div>
-                        <Label>Full Name</Label>
-                        <Input value={residentName} disabled />
-                      </div>
-                      <div>
-                        <Label>Address</Label>
-                        <Input value={resident.address} disabled />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label>Age</Label>
-                          <Input value={resident.age} disabled />
-                        </div>
-                        <div>
-                          <Label>Contact Number</Label>
-                          <Input value={resident.contact} disabled />
-                        </div>
-                      </div>
-                    </div>
+                    <Label>Certificate Type</Label>
+                    <Select value={certificateType} onValueChange={(v) => setCertificateType(v as CertificateType)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select certificate type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CERTIFICATE_TYPES.map(type => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <hr />
+                  {certificateType && (
+                    <>
+                      <hr />
+                      <div>
+                        <h4 className="font-semibold mb-3">Applicant Details</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <Label>Full Name</Label>
+                            <Input value={residentName} disabled />
+                          </div>
+                          <div>
+                            <Label>Address</Label>
+                            <Input value={resident.address} disabled />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label>Age</Label>
+                              <Input value={resident.age} disabled />
+                            </div>
+                            <div>
+                              <Label>Contact Number</Label>
+                              <Input value={resident.contact} disabled />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-                  <div>
-                    <h4 className="font-semibold mb-3">Request Details</h4>
-                    <div className="space-y-3">
+                      <hr />
+
                       <div>
-                        <Label>Certificate Type</Label>
-                        <Select value={certificateType} onValueChange={(v) => setCertificateType(v as CertificateType)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select certificate type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {CERTIFICATE_TYPES.map(type => (
-                              <SelectItem key={type} value={type}>{type}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>Purpose</Label>
-                        <Textarea
-                          placeholder="e.g., For job application, medical assistance, etc."
-                          value={purpose}
-                          onChange={(e) => setPurpose(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label>Upload Photo of Your Valid ID</Label>
+                        <h4 className="font-semibold mb-3">Additional Details</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <Label>Purpose</Label>
+                            <Textarea
+                              placeholder="e.g., For job application, medical assistance, etc."
+                              value={purpose}
+                              onChange={(e) => setPurpose(e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label>Upload Photo of Your Valid ID</Label>
                         {!validIdPreview ? (
                           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors mt-1">
                             <Upload className="h-8 w-8 text-muted-foreground mb-2" />
@@ -212,9 +216,11 @@ const ResidentPortal: React.FC = () => {
                             <p className="text-xs text-muted-foreground mt-1">{validIdFile?.name}</p>
                           </div>
                         )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
 
                   <div className="flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
