@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Upload, X } from 'lucide-react';
+import { LogOut, Upload, X, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +30,15 @@ const CERTIFICATE_TYPES: CertificateType[] = [
   'Oath of Undertaking',
   'Business Permit',
 ];
+
+const CERTIFICATE_DESCRIPTIONS: Record<string, string> = {
+  'Barangay Clearance': 'Official document certifying that a resident has no derogatory record in the barangay. Commonly used for employment, business, and legal purposes.',
+  'Certificate of Indigency': 'Certifies that a resident belongs to an indigent family. Used for medical assistance, scholarship applications, and government aid.',
+  'Certificate of Residency': 'Confirms that a person is a bonafide resident of the barangay. Required for enrollment, voter registration, and other transactions.',
+  'Certificate of Low Income': 'Certifies that a resident belongs to a low-income household. Used for financial assistance and social welfare programs.',
+  'Oath of Undertaking': 'A sworn statement by a resident undertaking responsibility for a specific matter. Used for legal and administrative purposes.',
+  'Business Permit': 'Authorization to operate a business within the barangay. Required for new and renewing business establishments.',
+};
 
 const ResidentPortal: React.FC = () => {
   const navigate = useNavigate();
@@ -153,6 +162,20 @@ const ResidentPortal: React.FC = () => {
 
                   {certificateType && (
                     <>
+                      {/* Certificate Preview Card */}
+                      <div className="rounded-lg border bg-muted/50 p-4 flex items-start gap-4">
+                        <div className="w-16 h-20 rounded-md bg-primary/10 border border-primary/20 flex flex-col items-center justify-center flex-shrink-0">
+                          <FileText className="h-8 w-8 text-primary" />
+                          <span className="text-[8px] text-primary font-semibold mt-1 text-center leading-tight">SAMPLE</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-foreground">{certificateType}</p>
+                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                            {CERTIFICATE_DESCRIPTIONS[certificateType] || 'Official barangay document.'}
+                          </p>
+                        </div>
+                      </div>
+
                       <hr />
                       <div>
                         <h4 className="font-semibold mb-3">Applicant Details</h4>

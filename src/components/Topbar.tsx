@@ -104,11 +104,13 @@ const Topbar: React.FC<TopbarProps> = ({ searchPlaceholder = "Search...", onSear
 
         {/* User Info */}
         <div className="flex items-center gap-3">
-          <img 
-            src={logo} 
-            alt="User" 
-            className="w-9 h-9 rounded-full object-cover"
-          />
+          <div className="w-10 h-10 rounded-full border-2 border-primary/30 overflow-hidden bg-primary/10 flex items-center justify-center">
+            <img 
+              src={logo} 
+              alt="Barangay Logo" 
+              className="w-full h-full object-cover"
+            />
+          </div>
           <span className="font-medium text-foreground">
             {userName} <span className="text-muted-foreground">(Barangay Official)</span>
           </span>

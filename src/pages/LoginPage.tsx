@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Phone, MapPin, Hash } from 'lucide-react';
+import { Mail, Lock, User, Phone, MapPin, Hash, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import logo from '@/assets/logo.png';
 import barangayHall from '@/assets/barangay-hall.jpg';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login, registerResident } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -100,6 +102,15 @@ const LoginPage: React.FC = () => {
         backgroundRepeat: 'no-repeat'
       }}
     >
+      {/* Theme Toggle */}
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={toggleTheme} 
+        className="absolute top-4 right-4 bg-card/80 backdrop-blur-sm text-foreground hover:bg-card shadow-md"
+      >
+        {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      </Button>
       <Card className="w-full max-w-md animate-fade-in max-h-[90vh] overflow-y-auto">
         <CardHeader className="text-center pb-2">
           <img src={logo} alt="Barangay Logo" className="w-20 h-20 mx-auto mb-4 rounded-full object-cover" />
