@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, User, Phone, MapPin, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,16 +12,25 @@ import barangayHall from '@/assets/barangay-hall.jpg';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, registerResident } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Sign up fields
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [middleName, setMiddleName] = useState('');
+  const [age, setAge] = useState('');
+  const [address, setAddress] = useState('');
+  const [contact, setContact] = useState('');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Try official first, then resident
     if (login(email, password, 'official')) {
       navigate('/dashboard');
     } else if (login(email, password, 'resident')) {
@@ -29,6 +38,56 @@ const LoginPage: React.FC = () => {
     } else {
       setError('Incorrect email or password. Please try again.');
     }
+  };
+
+  const handleSignUp = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!firstName || !lastName || !age || !address || !contact || !email || !password) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+
+    const registered = registerResident({
+      firstName,
+      lastName,
+      middleName,
+      age: parseInt(age),
+      address,
+      contact,
+      email,
+      password,
+    });
+
+    if (registered) {
+      setSuccess('Account created successfully! You can now log in.');
+      setIsSignUp(false);
+      // Reset sign up fields
+      setFirstName('');
+      setLastName('');
+      setMiddleName('');
+      setAge('');
+      setAddress('');
+      setContact('');
+      setPassword('');
+    } else {
+      setError('Email already registered. Please use a different email.');
+    }
+  };
+
+  const resetForm = () => {
+    setError('');
+    setSuccess('');
+    setEmail('');
+    setPassword('');
+    setFirstName('');
+    setLastName('');
+    setMiddleName('');
+    setAge('');
+    setAddress('');
+    setContact('');
   };
 
   return (
@@ -41,57 +100,105 @@ const LoginPage: React.FC = () => {
         backgroundRepeat: 'no-repeat'
       }}
     >
-      <Card className="w-full max-w-md animate-fade-in">
+      <Card className="w-full max-w-md animate-fade-in max-h-[90vh] overflow-y-auto">
         <CardHeader className="text-center pb-2">
           <img src={logo} alt="Barangay Logo" className="w-20 h-20 mx-auto mb-4 rounded-full object-cover" />
           <h1 className="text-xl font-bold text-foreground">Barangay Palma-Urbano</h1>
-          <p className="text-muted-foreground">Log In</p>
+          <p className="text-muted-foreground">{isSignUp ? 'Create an Account' : 'Log In'}</p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+          {!isSignUp ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input id="email" type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
+                </div>
               </div>
-            </div>
-            
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            
-            <Button type="submit" className="w-full">Login</Button>
-          </form>
-          
+
+              {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+              {success && <Alert><AlertDescription className="text-primary">{success}</AlertDescription></Alert>}
+
+              <Button type="submit" className="w-full">Login</Button>
+            </form>
+          ) : (
+            <form onSubmit={handleSignUp} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="firstName">First Name *</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="firstName" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="pl-10" required />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="lastName">Last Name *</Label>
+                  <Input id="lastName" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="middleName">Middle Name</Label>
+                <Input id="middleName" placeholder="Middle name (optional)" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="age">Age *</Label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="age" type="number" placeholder="Age" value={age} onChange={(e) => setAge(e.target.value)} className="pl-10" required />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="contact">Contact # *</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="contact" placeholder="09XX..." value={contact} onChange={(e) => setContact(e.target.value)} className="pl-10" required />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="address">Address *</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input id="address" placeholder="Complete address" value={address} onChange={(e) => setAddress(e.target.value)} className="pl-10" required />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="signupEmail">Email *</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input id="signupEmail" type="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="signupPassword">Password *</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input id="signupPassword" type="password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
+                </div>
+              </div>
+
+              {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+
+              <Button type="submit" className="w-full">Sign Up</Button>
+            </form>
+          )}
+
           <hr className="my-4" />
           <p className="text-center text-sm text-muted-foreground">
-            For authorized personnel and residents only.
+            {isSignUp ? (
+              <>Already have an account?{' '}<button type="button" className="text-primary font-medium hover:underline" onClick={() => { setIsSignUp(false); resetForm(); }}>Log In</button></>
+            ) : (
+              <>Don't have an account?{' '}<button type="button" className="text-primary font-medium hover:underline" onClick={() => { setIsSignUp(true); resetForm(); }}>Sign Up</button></>
+            )}
           </p>
         </CardContent>
       </Card>
