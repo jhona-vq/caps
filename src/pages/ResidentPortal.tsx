@@ -51,6 +51,7 @@ const ResidentPortal: React.FC = () => {
   const [purpose, setPurpose] = useState('');
   const [validIdFile, setValidIdFile] = useState<File | null>(null);
   const [validIdPreview, setValidIdPreview] = useState<string>('');
+  const [isSampleOpen, setIsSampleOpen] = useState(false);
 
   const resident = currentUser as Resident;
   const residentName = `${resident.firstName} ${resident.middleName || ''} ${resident.lastName}`.trim();
@@ -170,8 +171,11 @@ const ResidentPortal: React.FC = () => {
 
                   {certificateType && (
                     <>
-                      {/* Certificate Preview Card */}
-                      <div className="rounded-lg border bg-muted/50 p-4 flex items-start gap-4">
+                      {/* Certificate Preview Card - Clickable */}
+                      <div
+                        className="rounded-lg border bg-muted/50 p-4 flex items-start gap-4 cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => setIsSampleOpen(true)}
+                      >
                         <div className="w-16 h-20 rounded-md bg-primary/10 border border-primary/20 flex flex-col items-center justify-center flex-shrink-0">
                           <FileText className="h-8 w-8 text-primary" />
                           <span className="text-[8px] text-primary font-semibold mt-1 text-center leading-tight">SAMPLE</span>
@@ -181,8 +185,46 @@ const ResidentPortal: React.FC = () => {
                           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                             {CERTIFICATE_DESCRIPTIONS[certificateType] || 'Official barangay document.'}
                           </p>
+                          <p className="text-xs text-primary mt-2 font-medium">Click to view sample →</p>
                         </div>
                       </div>
+
+                      {/* Sample Certificate Modal */}
+                      <Dialog open={isSampleOpen} onOpenChange={setIsSampleOpen}>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>{certificateType} — Sample Preview</DialogTitle>
+                          </DialogHeader>
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="w-full aspect-[8.5/11] rounded-lg border-2 border-primary/20 bg-card p-6 flex flex-col items-center text-center">
+                              <div className="w-16 h-16 rounded-full border-2 border-primary/30 overflow-hidden bg-primary/10 flex items-center justify-center mb-3">
+                                <img src={logo} alt="Barangay Logo" className="w-full h-full object-cover" />
+                              </div>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Republic of the Philippines</p>
+                              <p className="text-[10px] text-muted-foreground">Province / City / Municipality</p>
+                              <p className="text-xs font-bold text-primary mt-1">Barangay Palma-Urbano</p>
+                              <div className="w-16 border-t border-primary/30 my-3" />
+                              <p className="text-sm font-bold text-foreground uppercase tracking-wide">{certificateType}</p>
+                              <div className="mt-4 text-left w-full space-y-2 text-xs text-muted-foreground">
+                                <p>TO WHOM IT MAY CONCERN:</p>
+                                <p className="leading-relaxed">
+                                  This is to certify that <span className="font-semibold text-foreground">JUAN DELA CRUZ</span>, of legal age, Filipino, and a resident of Barangay Palma-Urbano...
+                                </p>
+                                <p className="leading-relaxed">
+                                  {CERTIFICATE_DESCRIPTIONS[certificateType] || 'Official barangay document.'}
+                                </p>
+                              </div>
+                              <div className="mt-auto pt-6 w-full flex justify-end">
+                                <div className="text-center">
+                                  <div className="w-32 border-t border-foreground/50 mb-1" />
+                                  <p className="text-[10px] text-muted-foreground">Barangay Captain</p>
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground italic">This is a sample preview only. Actual certificate may differ.</p>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
 
                       <hr />
                       <div>
