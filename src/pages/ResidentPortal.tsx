@@ -1,30 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { LogOut, Upload, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -35,6 +22,15 @@ import { CertificateType, Resident, RequestStatus } from '@/types/barangay';
 import { format } from 'date-fns';
 import logo from '@/assets/logo.png';
 
+const CERTIFICATE_TYPES: CertificateType[] = [
+  'Barangay Clearance',
+  'Certificate of Indigency',
+  'Certificate of Residency',
+  'Certificate of Low Income',
+  'Oath of Undertaking',
+  'Business Permit',
+];
+
 const ResidentPortal: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
@@ -42,6 +38,8 @@ const ResidentPortal: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [certificateType, setCertificateType] = useState<CertificateType | ''>('');
   const [purpose, setPurpose] = useState('');
+  const [validIdFile, setValidIdFile] = useState<File | null>(null);
+  const [validIdPreview, setValidIdPreview] = useState<string>('');
 
   const resident = currentUser as Resident;
   const residentName = `${resident.firstName} ${resident.middleName || ''} ${resident.lastName}`.trim();
@@ -50,6 +48,21 @@ const ResidentPortal: React.FC = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setValidIdFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setValidIdPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeFile = () => {
+    setValidIdFile(null);
+    setValidIdPreview('');
   };
 
   const handleSubmitRequest = (e: React.FormEvent) => {
@@ -62,10 +75,13 @@ const ResidentPortal: React.FC = () => {
       certificateType: certificateType as CertificateType,
       purpose,
       status: 'Pending',
+      validIdFile: validIdFile?.name,
     });
 
     setCertificateType('');
     setPurpose('');
+    setValidIdFile(null);
+    setValidIdPreview('');
     setIsModalOpen(false);
   };
 
@@ -116,7 +132,7 @@ const ResidentPortal: React.FC = () => {
               <DialogTrigger asChild>
                 <Button>Apply for New Certificate</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-lg">
                 <DialogHeader>
                   <DialogTitle>Apply for a Certificate</DialogTitle>
                 </DialogHeader>
@@ -132,9 +148,15 @@ const ResidentPortal: React.FC = () => {
                         <Label>Address</Label>
                         <Input value={resident.address} disabled />
                       </div>
-                      <div>
-                        <Label>Contact Number</Label>
-                        <Input value={resident.contact} disabled />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label>Age</Label>
+                          <Input value={resident.age} disabled />
+                        </div>
+                        <div>
+                          <Label>Contact Number</Label>
+                          <Input value={resident.contact} disabled />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -151,10 +173,9 @@ const ResidentPortal: React.FC = () => {
                             <SelectValue placeholder="Select certificate type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Barangay Clearance">Barangay Clearance</SelectItem>
-                            <SelectItem value="Certificate of Indigency">Certificate of Indigency</SelectItem>
-                            <SelectItem value="Certificate of Residency">Certificate of Residency</SelectItem>
-                            <SelectItem value="Business Permit">Business Permit</SelectItem>
+                            {CERTIFICATE_TYPES.map(type => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -166,6 +187,31 @@ const ResidentPortal: React.FC = () => {
                           onChange={(e) => setPurpose(e.target.value)}
                           required
                         />
+                      </div>
+                      <div>
+                        <Label>Upload Photo of Your Valid ID</Label>
+                        {!validIdPreview ? (
+                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors mt-1">
+                            <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                            <span className="text-sm text-muted-foreground">Click to upload your valid ID</span>
+                            <span className="text-xs text-muted-foreground">(Any valid ID accepted)</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                          </label>
+                        ) : (
+                          <div className="relative mt-1">
+                            <img src={validIdPreview} alt="Valid ID Preview" className="w-full h-40 object-contain rounded-lg border" />
+                            <Button 
+                              type="button" 
+                              variant="destructive" 
+                              size="icon" 
+                              className="absolute top-1 right-1 h-6 w-6"
+                              onClick={removeFile}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                            <p className="text-xs text-muted-foreground mt-1">{validIdFile?.name}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

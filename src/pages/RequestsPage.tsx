@@ -4,26 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,13 +20,21 @@ import { useData } from '@/context/DataContext';
 import { CertificateRequest, CertificateType, RequestStatus } from '@/types/barangay';
 import { format } from 'date-fns';
 
+const CERTIFICATE_TYPES: CertificateType[] = [
+  'Barangay Clearance',
+  'Certificate of Indigency',
+  'Certificate of Residency',
+  'Certificate of Low Income',
+  'Oath of Undertaking',
+  'Business Permit',
+];
+
 const RequestsPage: React.FC = () => {
   const { requests, residents, addRequest, updateRequestStatus } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<CertificateRequest | null>(null);
   
-  // New request form state
   const [selectedResident, setSelectedResident] = useState('');
   const [certificateType, setCertificateType] = useState<CertificateType | ''>('');
   const [purpose, setPurpose] = useState('');
@@ -68,7 +63,6 @@ const RequestsPage: React.FC = () => {
       status: markAsApproved ? 'Approved' : 'Pending',
     });
 
-    // Reset form
     setSelectedResident('');
     setCertificateType('');
     setPurpose('');
@@ -87,10 +81,7 @@ const RequestsPage: React.FC = () => {
 
   return (
     <div>
-      <Topbar 
-        searchPlaceholder="Search requests..." 
-        onSearch={setSearchTerm}
-      />
+      <Topbar searchPlaceholder="Search requests..." onSearch={setSearchTerm} />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -160,10 +151,9 @@ const RequestsPage: React.FC = () => {
                           <SelectValue placeholder="Select certificate type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Barangay Clearance">Barangay Clearance</SelectItem>
-                          <SelectItem value="Certificate of Indigency">Certificate of Indigency</SelectItem>
-                          <SelectItem value="Certificate of Residency">Certificate of Residency</SelectItem>
-                          <SelectItem value="Business Permit">Business Permit</SelectItem>
+                          {CERTIFICATE_TYPES.map(type => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

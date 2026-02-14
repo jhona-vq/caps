@@ -8,6 +8,8 @@ export type CertificateType =
   | 'Barangay Clearance'
   | 'Certificate of Indigency'
   | 'Certificate of Residency'
+  | 'Certificate of Low Income'
+  | 'Oath of Undertaking'
   | 'Business Permit';
 
 export interface Resident {
@@ -34,6 +36,7 @@ export interface CertificateRequest {
   status: RequestStatus;
   dateRequested: Date;
   dateProcessed?: Date;
+  validIdFile?: string; // filename of uploaded valid ID
 }
 
 export interface Official {
@@ -50,4 +53,5 @@ export interface Notification {
   type: 'pending' | 'approved' | 'info';
   time: string;
   read: boolean;
+  requestId?: string;
 }
