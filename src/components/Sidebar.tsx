@@ -40,11 +40,13 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       <div className="flex-1">
         {/* Logo Section */}
         <div className="flex items-center gap-3 px-6 py-8">
-          <img 
-            src={logo} 
-            alt="Barangay Logo" 
-            className="w-14 h-14 rounded-full object-cover brightness-0 invert"
-          />
+          <div className="w-14 h-14 rounded-full border-2 border-white/30 overflow-hidden bg-white/10 flex items-center justify-center">
+            <img 
+              src={logo} 
+              alt="Barangay Logo" 
+              className="w-full h-full object-cover"
+            />
+          </div>
           <h1 className="text-lg font-semibold">Palma-Urbano</h1>
         </div>
 
