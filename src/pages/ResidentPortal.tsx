@@ -105,12 +105,14 @@ const ResidentPortal: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      {/* Navbar */}
-      <nav className="bg-card shadow-sm px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="Barangay Logo" className="w-8 h-8 rounded-full" />
-          <span className="font-semibold text-lg text-primary">Palma-Urbano Portal</span>
-        </div>
+       {/* Navbar */}
+       <nav className="bg-card shadow-sm px-8 py-4 flex items-center justify-between">
+         <div className="flex items-center gap-3">
+           <div className="w-10 h-10 rounded-full border-2 border-primary/30 overflow-hidden bg-primary/10 flex items-center justify-center">
+             <img src={logo} alt="Barangay Logo" className="w-full h-full object-cover" />
+           </div>
+           <span className="font-semibold text-lg text-primary">Palma-Urbano Portal</span>
+         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
             <p className="font-semibold text-foreground">{residentName}</p>
