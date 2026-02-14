@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Upload, X, FileText } from 'lucide-react';
+import { LogOut, Upload, X, FileText, Sun, Moon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
+import { useTheme } from '@/context/ThemeContext';
 import { CertificateType, Resident, RequestStatus } from '@/types/barangay';
 import { format } from 'date-fns';
 import logo from '@/assets/logo.png';
@@ -43,6 +44,7 @@ const CERTIFICATE_DESCRIPTIONS: Record<string, string> = {
 const ResidentPortal: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { addRequest, getResidentRequests } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [certificateType, setCertificateType] = useState<CertificateType | ''>('');
@@ -114,6 +116,10 @@ const ResidentPortal: React.FC = () => {
            <span className="font-semibold text-lg text-primary">Palma-Urbano Portal</span>
          </div>
         <div className="flex items-center gap-4">
+          {/* Theme Toggle */}
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground hover:text-foreground">
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
           <div className="text-right">
             <p className="font-semibold text-foreground">{residentName}</p>
             <p className="text-sm text-muted-foreground">Resident</p>
@@ -260,37 +266,37 @@ const ResidentPortal: React.FC = () => {
         </Card>
 
         {/* Requests Table */}
-        <Card className="bg-secondary">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-secondary-foreground">My Certificate Requests</CardTitle>
+            <CardTitle>My Certificate Requests</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
-                <TableRow className="border-secondary-foreground/20">
-                  <TableHead className="text-secondary-foreground/70">#</TableHead>
-                  <TableHead className="text-secondary-foreground/70">Certificate Type</TableHead>
-                  <TableHead className="text-secondary-foreground/70">Date Requested</TableHead>
-                  <TableHead className="text-secondary-foreground/70">Status</TableHead>
-                  <TableHead className="text-secondary-foreground/70">Purpose</TableHead>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Certificate Type</TableHead>
+                  <TableHead>Date Requested</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Purpose</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {myRequests.length > 0 ? (
                   myRequests.map((request, index) => (
-                    <TableRow key={request.id} className="border-secondary-foreground/20">
-                      <TableCell className="text-secondary-foreground">{index + 1}</TableCell>
-                      <TableCell className="text-secondary-foreground">{request.certificateType}</TableCell>
-                      <TableCell className="text-secondary-foreground">
+                    <TableRow key={request.id}>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell>{request.certificateType}</TableCell>
+                      <TableCell>
                         {format(new Date(request.dateRequested), 'MMM dd, yyyy')}
                       </TableCell>
                       <TableCell>{getStatusBadge(request.status)}</TableCell>
-                      <TableCell className="text-secondary-foreground">{request.purpose}</TableCell>
+                      <TableCell>{request.purpose}</TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-secondary-foreground/70 py-8">
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                       You have not made any requests yet.
                     </TableCell>
                   </TableRow>
