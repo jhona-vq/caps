@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Resident, Official, UserRole } from '@/types/barangay';
 
 interface AuthContextType {
@@ -7,11 +7,11 @@ interface AuthContextType {
   login: (email: string, password: string, role: UserRole) => boolean;
   logout: () => void;
   registerResident: (resident: Omit<Resident, 'id' | 'status' | 'createdAt'>) => boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock data - In production, this would come from a database
 const mockOfficials: Official[] = [
   { id: '1', name: 'Rose', email: 'rose@barangay.gov', password: 'admin123' },
   { id: '2', name: 'Admin', email: 'admin@barangay.gov', password: 'admin123' },
@@ -53,7 +53,7 @@ const initialResidents: Resident[] = [
     contact: '09201234567',
     email: 'pedro@email.com',
     password: 'password123',
-    status: 'Pending Approval',
+    status: 'Active',
     createdAt: new Date('2024-03-01'),
   },
 ];
@@ -62,6 +62,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, setCurrentUser] = useState<Resident | Official | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [residents, setResidents] = useState<Resident[]>(initialResidents);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const savedSession = localStorage.getItem('brgy_session');
+    if (savedSession) {
+      try {
+        const session = JSON.parse(savedSession);
+        setCurrentUser(session.user);
+        setUserRole(session.role);
+      } catch {
+        localStorage.removeItem('brgy_session');
+      }
+    }
+    setIsLoading(false);
+  }, []);
 
   const login = (email: string, password: string, role: UserRole): boolean => {
     if (role === 'official') {
@@ -71,18 +87,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (official) {
         setCurrentUser(official);
         setUserRole('official');
+        localStorage.setItem('brgy_session', JSON.stringify({ user: official, role: 'official' }));
         return true;
       }
     } else {
       const resident = residents.find(
-        (r) => r.email.toLowerCase() === email.toLowerCase() && r.password === password
+        (r) => r.email.toLowerCase() === email.toLowerCase() && r.password === password && r.status === 'Active'
       );
       if (resident) {
-        if (resident.status === 'Pending Approval') {
-          return false; // Will show pending message
-        }
         setCurrentUser(resident);
         setUserRole('resident');
+        localStorage.setItem('brgy_session', JSON.stringify({ user: resident, role: 'resident' }));
         return true;
       }
     }
@@ -92,10 +107,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     setCurrentUser(null);
     setUserRole(null);
+    localStorage.removeItem('brgy_session');
   };
 
   const registerResident = (residentData: Omit<Resident, 'id' | 'status' | 'createdAt'>): boolean => {
-    // Check if email already exists
     const exists = residents.some(
       (r) => r.email.toLowerCase() === residentData.email.toLowerCase()
     );
@@ -104,7 +119,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newResident: Resident = {
       ...residentData,
       id: Date.now().toString(),
-      status: 'Active', // Auto-approve for now (demo purposes)
+      status: 'Active',
       createdAt: new Date(),
     };
     setResidents([...residents, newResident]);
@@ -112,7 +127,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, userRole, login, logout, registerResident }}>
+    <AuthContext.Provider value={{ currentUser, userRole, login, logout, registerResident, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
@@ -126,5 +141,4 @@ export const useAuth = () => {
   return context;
 };
 
-// Export residents for use in other components
 export { initialResidents };

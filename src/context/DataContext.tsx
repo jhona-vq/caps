@@ -14,6 +14,8 @@ interface DataContextType {
   getResidentRequests: (residentId: string) => CertificateRequest[];
   getPendingCount: () => number;
   getTotalResidents: () => number;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -89,6 +91,7 @@ const initialNotifications: Notification[] = [
     type: 'pending',
     time: '2 hours ago',
     read: false,
+    requestId: '1',
   },
   {
     id: '2',
@@ -97,6 +100,7 @@ const initialNotifications: Notification[] = [
     type: 'approved',
     time: '1 day ago',
     read: false,
+    requestId: '2',
   },
   {
     id: '3',
@@ -144,7 +148,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
     setRequests([...requests, newRequest]);
     
-    // Add notification
     const newNotification: Notification = {
       id: Date.now().toString(),
       title: 'New Certificate Request',
@@ -152,6 +155,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       type: 'pending',
       time: 'Just now',
       read: false,
+      requestId: newRequest.id,
     };
     setNotifications([newNotification, ...notifications]);
   };
@@ -174,6 +178,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return residents.filter((r) => r.status === 'Active').length;
   };
 
+  const markNotificationRead = (id: string) => {
+    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const markAllNotificationsRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, read: true })));
+  };
+
   return (
     <DataContext.Provider value={{
       residents,
@@ -188,6 +200,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       getResidentRequests,
       getPendingCount,
       getTotalResidents,
+      markNotificationRead,
+      markAllNotificationsRead,
     }}>
       {children}
     </DataContext.Provider>
