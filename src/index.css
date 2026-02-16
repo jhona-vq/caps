@@ -23,8 +23,8 @@
     --primary: 220 70% 50%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Soft Teal (easier on eyes) */
-    --secondary: 170 50% 40%;
+    /* Secondary - Dark Navy Blue (sidebar) */
+    --secondary: 220 60% 18%;
     --secondary-foreground: 0 0% 100%;
 
     /* Muted - Gentle gray */
@@ -51,14 +51,14 @@
 
     --radius: 0.75rem;
 
-    /* Sidebar - Softer Teal theme */
-    --sidebar-background: 170 50% 40%;
-    --sidebar-foreground: 0 0% 100%;
+    /* Sidebar - Dark Navy Blue theme */
+    --sidebar-background: 220 60% 18%;
+    --sidebar-foreground: 210 40% 95%;
     --sidebar-primary: 220 70% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 170 45% 35%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 170 40% 50%;
+    --sidebar-accent: 220 50% 25%;
+    --sidebar-accent-foreground: 210 40% 95%;
+    --sidebar-border: 220 50% 25%;
     --sidebar-ring: 220 70% 60%;
   }
 

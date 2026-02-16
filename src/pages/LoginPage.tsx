@@ -20,6 +20,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Sign up fields
   const [firstName, setFirstName] = useState('');
@@ -29,30 +30,32 @@ const LoginPage: React.FC = () => {
   const [address, setAddress] = useState('');
   const [contact, setContact] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
-    if (login(email, password, 'official')) {
-      navigate('/dashboard');
-    } else if (login(email, password, 'resident')) {
-      navigate('/portal');
-    } else {
-      setError('Incorrect email or password. Please try again.');
+    const result = await login(email, password);
+    if (!result.success) {
+      setError(result.error || 'Incorrect email or password.');
     }
+    // Navigation is handled by auth state change in App.tsx
+    setIsSubmitting(false);
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setIsSubmitting(true);
 
     if (!firstName || !lastName || !age || !address || !contact || !email || !password) {
       setError('Please fill in all required fields.');
+      setIsSubmitting(false);
       return;
     }
 
-    const registered = registerResident({
+    const result = await registerResident({
       firstName,
       lastName,
       middleName,
@@ -63,52 +66,32 @@ const LoginPage: React.FC = () => {
       password,
     });
 
-    if (registered) {
+    if (result.success) {
       setSuccess('Account created successfully! You can now log in.');
       setIsSignUp(false);
-      // Reset sign up fields
-      setFirstName('');
-      setLastName('');
-      setMiddleName('');
-      setAge('');
-      setAddress('');
-      setContact('');
-      setPassword('');
+      setFirstName(''); setLastName(''); setMiddleName('');
+      setAge(''); setAddress(''); setContact(''); setPassword('');
     } else {
-      setError('Email already registered. Please use a different email.');
+      setError(result.error || 'Registration failed.');
     }
+    setIsSubmitting(false);
   };
 
   const resetForm = () => {
-    setError('');
-    setSuccess('');
-    setEmail('');
-    setPassword('');
-    setFirstName('');
-    setLastName('');
-    setMiddleName('');
-    setAge('');
-    setAddress('');
-    setContact('');
+    setError(''); setSuccess(''); setEmail(''); setPassword('');
+    setFirstName(''); setLastName(''); setMiddleName('');
+    setAge(''); setAddress(''); setContact('');
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
         backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${barangayHall})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'
       }}
     >
-      {/* Theme Toggle */}
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={toggleTheme} 
-        className="absolute top-4 right-4 bg-card/80 backdrop-blur-sm text-foreground hover:bg-card shadow-md"
-      >
+      <Button variant="ghost" size="icon" onClick={toggleTheme} className="absolute top-4 right-4 bg-card/80 backdrop-blur-sm text-foreground hover:bg-card shadow-md">
         {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </Button>
       <Card className="w-full max-w-md animate-fade-in max-h-[90vh] overflow-y-auto">
@@ -134,11 +117,11 @@ const LoginPage: React.FC = () => {
                   <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
                 </div>
               </div>
-
               {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
               {success && <Alert><AlertDescription className="text-primary">{success}</AlertDescription></Alert>}
-
-              <Button type="submit" className="w-full">Login</Button>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? 'Logging in...' : 'Login'}
+              </Button>
             </form>
           ) : (
             <form onSubmit={handleSignUp} className="space-y-3">
@@ -193,16 +176,15 @@ const LoginPage: React.FC = () => {
                 <Label htmlFor="signupPassword">Password *</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input id="signupPassword" type="password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
+                  <Input id="signupPassword" type="password" placeholder="Create a password (min 6 chars)" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
                 </div>
               </div>
-
               {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-
-              <Button type="submit" className="w-full">Sign Up</Button>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating account...' : 'Sign Up'}
+              </Button>
             </form>
           )}
-
           <hr className="my-4" />
           <p className="text-center text-sm text-muted-foreground">
             {isSignUp ? (

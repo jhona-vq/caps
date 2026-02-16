@@ -1,228 +1,69 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Check } from 'lucide-react';
+import { Edit, Trash2, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Topbar from '@/components/Topbar';
-import { useData } from '@/context/DataContext';
-import { Resident } from '@/types/barangay';
+import { useData, DBProfile } from '@/context/DataContext';
 import { cn } from '@/lib/utils';
 
 const ResidentsPage: React.FC = () => {
-  const { residents, addResident, updateResident, deleteResident, approveResident } = useData();
+  const { residents, updateProfile, deleteResident, approveResident } = useData();
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingResident, setEditingResident] = useState<Resident | null>(null);
-  
-  // Form state
+  const [editingResident, setEditingResident] = useState<DBProfile | null>(null);
+
   const [formData, setFormData] = useState({
-    lastName: '',
-    firstName: '',
-    middleName: '',
-    age: '',
-    address: '',
-    contact: '',
-    email: '',
-    password: '',
+    last_name: '', first_name: '', middle_name: '',
+    age: '', address: '', contact: '',
   });
 
   const filteredResidents = residents.filter(
     (r) =>
-      r.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.email.toLowerCase().includes(searchTerm.toLowerCase())
+      r.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.last_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const resetForm = () => {
+  const openEditModal = (resident: DBProfile) => {
     setFormData({
-      lastName: '',
-      firstName: '',
-      middleName: '',
-      age: '',
-      address: '',
-      contact: '',
-      email: '',
-      password: '',
-    });
-  };
-
-  const handleAddResident = (e: React.FormEvent) => {
-    e.preventDefault();
-    addResident({
-      lastName: formData.lastName,
-      firstName: formData.firstName,
-      middleName: formData.middleName || undefined,
-      age: parseInt(formData.age),
-      address: formData.address,
-      contact: formData.contact,
-      email: formData.email,
-      password: formData.password,
-      status: 'Active',
-    });
-    resetForm();
-    setIsAddModalOpen(false);
-  };
-
-  const handleEditResident = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingResident) return;
-    
-    updateResident(editingResident.id, {
-      lastName: formData.lastName,
-      firstName: formData.firstName,
-      middleName: formData.middleName || undefined,
-      age: parseInt(formData.age),
-      address: formData.address,
-      contact: formData.contact,
-    });
-    resetForm();
-    setEditingResident(null);
-  };
-
-  const openEditModal = (resident: Resident) => {
-    setFormData({
-      lastName: resident.lastName,
-      firstName: resident.firstName,
-      middleName: resident.middleName || '',
-      age: resident.age.toString(),
-      address: resident.address,
-      contact: resident.contact,
-      email: resident.email,
-      password: '',
+      last_name: resident.last_name,
+      first_name: resident.first_name,
+      middle_name: resident.middle_name || '',
+      age: resident.age?.toString() || '',
+      address: resident.address || '',
+      contact: resident.contact || '',
     });
     setEditingResident(resident);
   };
 
+  const handleEditResident = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingResident) return;
+    await updateProfile(editingResident.user_id, {
+      last_name: formData.last_name,
+      first_name: formData.first_name,
+      middle_name: formData.middle_name || null,
+      age: parseInt(formData.age) || null,
+      address: formData.address || null,
+      contact: formData.contact || null,
+    } as any);
+    setEditingResident(null);
+  };
+
   return (
     <div>
-      <Topbar 
-        searchPlaceholder="Search residents..." 
-        onSearch={setSearchTerm}
-      />
+      <Topbar searchPlaceholder="Search residents..." onSearch={setSearchTerm} />
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Registered Residents & Signups</CardTitle>
-          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => resetForm()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Resident
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Resident</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleAddResident} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Last Name</Label>
-                    <Input
-                      placeholder="Dela Cruz"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label>First Name</Label>
-                    <Input
-                      placeholder="Juan"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Middle Name (Optional)</Label>
-                  <Input
-                    placeholder="Perez"
-                    value={formData.middleName}
-                    onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Age</Label>
-                    <Input
-                      type="number"
-                      placeholder="30"
-                      min="1"
-                      max="120"
-                      value={formData.age}
-                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label>Contact Number</Label>
-                    <Input
-                      placeholder="09171234567"
-                      value={formData.contact}
-                      onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Address</Label>
-                  <Input
-                    placeholder="123 Rizal St"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    required
-                  />
-                </div>
-                <hr />
-                <h4 className="font-semibold">Account Credentials</h4>
-                <div>
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    placeholder="juan@email.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Password</Label>
-                  <Input
-                    type="password"
-                    placeholder="Enter password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">Save Resident</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+        <CardHeader>
+          <CardTitle>Registered Residents</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -232,133 +73,38 @@ const ResidentsPage: React.FC = () => {
                 <TableHead>AGE</TableHead>
                 <TableHead>ADDRESS</TableHead>
                 <TableHead>CONTACT</TableHead>
-                <TableHead>EMAIL</TableHead>
                 <TableHead>STATUS</TableHead>
                 <TableHead className="text-center">ACTIONS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredResidents.map((resident) => (
-                <TableRow 
+                <TableRow
                   key={resident.id}
-                  className={cn(
-                    resident.status === 'Pending Approval' && 'bg-warning/10 border-l-4 border-l-warning'
-                  )}
+                  className={cn(resident.status === 'Pending Approval' && 'bg-warning/10 border-l-4 border-l-warning')}
                 >
                   <TableCell className="font-medium">
-                    {resident.firstName} {resident.middleName || ''} {resident.lastName}
+                    {resident.first_name} {resident.middle_name || ''} {resident.last_name}
                   </TableCell>
-                  <TableCell>{resident.age}</TableCell>
-                  <TableCell>{resident.address}</TableCell>
-                  <TableCell>{resident.contact}</TableCell>
-                  <TableCell>{resident.email}</TableCell>
+                  <TableCell>{resident.age || '-'}</TableCell>
+                  <TableCell>{resident.address || '-'}</TableCell>
+                  <TableCell>{resident.contact || '-'}</TableCell>
                   <TableCell>
                     <Badge className={
-                      resident.status === 'Active' 
-                        ? 'bg-success text-success-foreground' 
-                        : 'bg-warning text-warning-foreground'
-                    }>
-                      {resident.status}
-                    </Badge>
+                      resident.status === 'Active' ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'
+                    }>{resident.status}</Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-2">
                       {resident.status === 'Pending Approval' && (
-                        <Button 
-                          size="sm" 
-                          className="bg-success hover:bg-success/90"
-                          onClick={() => approveResident(resident.id)}
-                        >
+                        <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => approveResident(resident.user_id)}>
                           <Check className="h-4 w-4" />
                         </Button>
                       )}
-                      <Dialog open={editingResident?.id === resident.id} onOpenChange={(open) => !open && setEditingResident(null)}>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openEditModal(resident)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Edit Resident</DialogTitle>
-                          </DialogHeader>
-                          <form onSubmit={handleEditResident} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Last Name</Label>
-                                <Input
-                                  value={formData.lastName}
-                                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                  required
-                                />
-                              </div>
-                              <div>
-                                <Label>First Name</Label>
-                                <Input
-                                  value={formData.firstName}
-                                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                  required
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <Label>Middle Name (Optional)</Label>
-                              <Input
-                                value={formData.middleName}
-                                onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Age</Label>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  max="120"
-                                  value={formData.age}
-                                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                                  required
-                                />
-                              </div>
-                              <div>
-                                <Label>Contact Number</Label>
-                                <Input
-                                  value={formData.contact}
-                                  onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                                  required
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <Label>Address</Label>
-                              <Input
-                                value={formData.address}
-                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                required
-                              />
-                            </div>
-                            <div>
-                              <Label>Email (Cannot be changed)</Label>
-                              <Input value={formData.email} disabled />
-                            </div>
-                            <div className="flex justify-end gap-2">
-                              <Button type="button" variant="outline" onClick={() => setEditingResident(null)}>
-                                Cancel
-                              </Button>
-                              <Button type="submit">Update Resident</Button>
-                            </div>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => deleteResident(resident.id)}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => openEditModal(resident)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => deleteResident(resident.user_id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -367,9 +113,7 @@ const ResidentsPage: React.FC = () => {
               ))}
               {filteredResidents.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    No residents found.
-                  </TableCell>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No residents found.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -379,6 +123,29 @@ const ResidentsPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Modal */}
+      <Dialog open={!!editingResident} onOpenChange={(open) => !open && setEditingResident(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Resident</DialogTitle></DialogHeader>
+          <form onSubmit={handleEditResident} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Last Name</Label><Input value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value })} required /></div>
+              <div><Label>First Name</Label><Input value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value })} required /></div>
+            </div>
+            <div><Label>Middle Name</Label><Input value={formData.middle_name} onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Age</Label><Input type="number" value={formData.age} onChange={(e) => setFormData({ ...formData, age: e.target.value })} /></div>
+              <div><Label>Contact</Label><Input value={formData.contact} onChange={(e) => setFormData({ ...formData, contact: e.target.value })} /></div>
+            </div>
+            <div><Label>Address</Label><Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} /></div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setEditingResident(null)}>Cancel</Button>
+              <Button type="submit">Update Resident</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

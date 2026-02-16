@@ -1,207 +1,153 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Resident, CertificateRequest, Notification, ResidentStatus, RequestStatus, CertificateType } from '@/types/barangay';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthContext';
+
+export interface DBProfile {
+  id: string;
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  middle_name: string | null;
+  age: number | null;
+  address: string | null;
+  contact: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DBRequest {
+  id: string;
+  resident_id: string;
+  resident_name: string;
+  certificate_type: string;
+  purpose: string;
+  notes: string | null;
+  status: string;
+  valid_id_url: string | null;
+  date_requested: string;
+  date_processed: string | null;
+  created_at: string;
+}
+
+export interface DBStatusHistory {
+  id: string;
+  request_id: string;
+  status: string;
+  changed_by: string | null;
+  notes: string | null;
+  created_at: string;
+}
 
 interface DataContextType {
-  residents: Resident[];
-  requests: CertificateRequest[];
-  notifications: Notification[];
-  addResident: (resident: Omit<Resident, 'id' | 'createdAt'>) => void;
-  updateResident: (id: string, data: Partial<Resident>) => void;
-  deleteResident: (id: string) => void;
-  approveResident: (id: string) => void;
-  addRequest: (request: Omit<CertificateRequest, 'id' | 'dateRequested'>) => void;
-  updateRequestStatus: (id: string, status: RequestStatus) => void;
-  getResidentRequests: (residentId: string) => CertificateRequest[];
+  residents: DBProfile[];
+  requests: DBRequest[];
+  loading: boolean;
+  addRequest: (req: { certificateType: string; purpose: string; residentName: string; residentId: string }) => Promise<void>;
+  updateRequestStatus: (id: string, status: string) => Promise<void>;
+  getResidentRequests: (residentId: string) => DBRequest[];
+  getRequestHistory: (requestId: string) => Promise<DBStatusHistory[]>;
   getPendingCount: () => number;
   getTotalResidents: () => number;
-  markNotificationRead: (id: string) => void;
-  markAllNotificationsRead: () => void;
+  updateProfile: (userId: string, data: Partial<DBProfile>) => Promise<void>;
+  approveResident: (userId: string) => Promise<void>;
+  deleteResident: (userId: string) => Promise<void>;
+  refreshData: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const initialResidents: Resident[] = [
-  {
-    id: '1',
-    lastName: 'Dela Cruz',
-    firstName: 'Juan',
-    middleName: 'Perez',
-    age: 30,
-    address: '123 Rizal St, Palma-Urbano',
-    contact: '09171234567',
-    email: 'juan@email.com',
-    password: 'password123',
-    status: 'Active',
-    createdAt: new Date('2024-01-15'),
-  },
-  {
-    id: '2',
-    lastName: 'Santos',
-    firstName: 'Maria',
-    middleName: 'Garcia',
-    age: 25,
-    address: '456 Mabini St, Palma-Urbano',
-    contact: '09189876543',
-    email: 'maria@email.com',
-    password: 'password123',
-    status: 'Active',
-    createdAt: new Date('2024-02-20'),
-  },
-  {
-    id: '3',
-    lastName: 'Reyes',
-    firstName: 'Pedro',
-    age: 45,
-    address: '789 Luna St, Palma-Urbano',
-    contact: '09201234567',
-    email: 'pedro@email.com',
-    password: 'password123',
-    status: 'Pending Approval',
-    createdAt: new Date('2024-03-01'),
-  },
-];
-
-const initialRequests: CertificateRequest[] = [
-  {
-    id: '1',
-    residentId: '1',
-    residentName: 'Juan Perez Dela Cruz',
-    certificateType: 'Barangay Clearance',
-    purpose: 'For job application',
-    status: 'Pending',
-    dateRequested: new Date('2024-03-10'),
-  },
-  {
-    id: '2',
-    residentId: '2',
-    residentName: 'Maria Garcia Santos',
-    certificateType: 'Certificate of Indigency',
-    purpose: 'For medical assistance',
-    status: 'Approved',
-    dateRequested: new Date('2024-03-08'),
-    dateProcessed: new Date('2024-03-09'),
-  },
-];
-
-const initialNotifications: Notification[] = [
-  {
-    id: '1',
-    title: 'New Request',
-    description: 'Juan Dela Cruz requested a Barangay Clearance',
-    type: 'pending',
-    time: '2 hours ago',
-    read: false,
-    requestId: '1',
-  },
-  {
-    id: '2',
-    title: 'Certificate Approved',
-    description: 'Certificate of Indigency for Maria Santos has been approved',
-    type: 'approved',
-    time: '1 day ago',
-    read: false,
-    requestId: '2',
-  },
-  {
-    id: '3',
-    title: 'New Resident Signup',
-    description: 'Pedro Reyes signed up and is pending approval',
-    type: 'info',
-    time: '2 days ago',
-    read: false,
-  },
-];
-
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [residents, setResidents] = useState<Resident[]>(initialResidents);
-  const [requests, setRequests] = useState<CertificateRequest[]>(initialRequests);
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+  const { user, userRole } = useAuth();
+  const [residents, setResidents] = useState<DBProfile[]>([]);
+  const [requests, setRequests] = useState<DBRequest[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addResident = (residentData: Omit<Resident, 'id' | 'createdAt'>) => {
-    const newResident: Resident = {
-      ...residentData,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-    };
-    setResidents([...residents, newResident]);
+  const fetchData = useCallback(async () => {
+    if (!user) { setLoading(false); return; }
+
+    setLoading(true);
+    const [profilesRes, requestsRes] = await Promise.all([
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+      supabase.from('certificate_requests').select('*').order('date_requested', { ascending: false }),
+    ]);
+
+    if (profilesRes.data) setResidents(profilesRes.data as DBProfile[]);
+    if (requestsRes.data) setRequests(requestsRes.data as DBRequest[]);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Realtime subscription for certificate_requests
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('requests-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'certificate_requests' }, () => {
+        fetchData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, fetchData]);
+
+  const addRequest = async (req: { certificateType: string; purpose: string; residentName: string; residentId: string }) => {
+    await supabase.from('certificate_requests').insert({
+      resident_id: req.residentId,
+      resident_name: req.residentName,
+      certificate_type: req.certificateType as any,
+      purpose: req.purpose,
+      status: 'Pending' as const,
+    });
+    await fetchData();
   };
 
-  const updateResident = (id: string, data: Partial<Resident>) => {
-    setResidents(residents.map((r) => (r.id === id ? { ...r, ...data } : r)));
-  };
-
-  const deleteResident = (id: string) => {
-    setResidents(residents.filter((r) => r.id !== id));
-  };
-
-  const approveResident = (id: string) => {
-    setResidents(residents.map((r) => 
-      r.id === id ? { ...r, status: 'Active' as ResidentStatus } : r
-    ));
-  };
-
-  const addRequest = (requestData: Omit<CertificateRequest, 'id' | 'dateRequested'>) => {
-    const newRequest: CertificateRequest = {
-      ...requestData,
-      id: Date.now().toString(),
-      dateRequested: new Date(),
-    };
-    setRequests([...requests, newRequest]);
-    
-    const newNotification: Notification = {
-      id: Date.now().toString(),
-      title: 'New Certificate Request',
-      description: `${requestData.residentName} requested a ${requestData.certificateType}`,
-      type: 'pending',
-      time: 'Just now',
-      read: false,
-      requestId: newRequest.id,
-    };
-    setNotifications([newNotification, ...notifications]);
-  };
-
-  const updateRequestStatus = (id: string, status: RequestStatus) => {
-    setRequests(requests.map((r) => 
-      r.id === id ? { ...r, status, dateProcessed: new Date() } : r
-    ));
+  const updateRequestStatus = async (id: string, status: string) => {
+    await supabase.from('certificate_requests').update({
+      status: status as any,
+      date_processed: new Date().toISOString(),
+    }).eq('id', id);
+    await fetchData();
   };
 
   const getResidentRequests = (residentId: string) => {
-    return requests.filter((r) => r.residentId === residentId);
+    return requests.filter(r => r.resident_id === residentId);
   };
 
-  const getPendingCount = () => {
-    return requests.filter((r) => r.status === 'Pending').length;
+  const getRequestHistory = async (requestId: string): Promise<DBStatusHistory[]> => {
+    const { data } = await supabase
+      .from('request_status_history')
+      .select('*')
+      .eq('request_id', requestId)
+      .order('created_at', { ascending: true });
+    return (data || []) as DBStatusHistory[];
   };
 
-  const getTotalResidents = () => {
-    return residents.filter((r) => r.status === 'Active').length;
+  const getPendingCount = () => requests.filter(r => r.status === 'Pending').length;
+  const getTotalResidents = () => residents.filter(r => r.status === 'Active').length;
+
+  const updateProfile = async (userId: string, data: Partial<DBProfile>) => {
+    await supabase.from('profiles').update(data).eq('user_id', userId);
+    await fetchData();
   };
 
-  const markNotificationRead = (id: string) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+  const approveResident = async (userId: string) => {
+    await supabase.from('profiles').update({ status: 'Active' }).eq('user_id', userId);
+    await fetchData();
   };
 
-  const markAllNotificationsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+  const deleteResident = async (userId: string) => {
+    await supabase.from('profiles').delete().eq('user_id', userId);
+    await fetchData();
   };
 
   return (
     <DataContext.Provider value={{
-      residents,
-      requests,
-      notifications,
-      addResident,
-      updateResident,
-      deleteResident,
-      approveResident,
-      addRequest,
-      updateRequestStatus,
-      getResidentRequests,
-      getPendingCount,
-      getTotalResidents,
-      markNotificationRead,
-      markAllNotificationsRead,
+      residents, requests, loading, addRequest, updateRequestStatus,
+      getResidentRequests, getRequestHistory, getPendingCount, getTotalResidents,
+      updateProfile, approveResident, deleteResident, refreshData: fetchData,
     }}>
       {children}
     </DataContext.Provider>
@@ -210,8 +156,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useData = () => {
   const context = useContext(DataContext);
-  if (context === undefined) {
-    throw new Error('useData must be used within a DataProvider');
-  }
+  if (!context) throw new Error('useData must be used within DataProvider');
   return context;
 };

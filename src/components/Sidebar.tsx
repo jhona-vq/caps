@@ -20,8 +20,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const location = useLocation();
   const { logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -34,7 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
 
   return (
     <aside className={cn(
-      "w-64 bg-secondary text-secondary-foreground h-screen fixed left-0 top-0 flex flex-col",
+      "w-64 bg-[hsl(var(--sidebar-background))] text-[hsl(var(--sidebar-foreground))] h-screen fixed left-0 top-0 flex flex-col",
       className
     )}>
       <div className="flex-1">
@@ -61,8 +61,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left",
                   isActive 
-                    ? "bg-primary text-primary-foreground" 
-                    : "hover:bg-sidebar-accent"
+                    ? "bg-[hsl(var(--sidebar-primary))] text-[hsl(var(--sidebar-primary-foreground))]" 
+                    : "hover:bg-[hsl(var(--sidebar-accent))]"
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -74,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           {/* Logout */}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left text-warning hover:bg-destructive hover:text-destructive-foreground mt-4"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left text-destructive-foreground/70 hover:bg-destructive/20 hover:text-destructive-foreground mt-4"
           >
             <LogOut className="h-5 w-5" />
             <span className="font-medium">Logout</span>
