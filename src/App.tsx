@@ -17,24 +17,23 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Protected route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRole: 'official' | 'resident' }> = ({ children, allowedRole }) => {
-  const { currentUser, userRole, isLoading } = useAuth();
+  const { user, userRole, isLoading } = useAuth();
   
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
-  if (!currentUser || userRole !== allowedRole) return <Navigate to="/" replace />;
+  if (!user || userRole !== allowedRole) return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 
 const AppRoutes = () => {
-  const { currentUser, userRole, isLoading } = useAuth();
+  const { user, userRole, isLoading } = useAuth();
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
 
   return (
     <Routes>
       <Route path="/" element={
-        currentUser ? (
+        user ? (
           <Navigate to={userRole === 'official' ? '/dashboard' : '/portal'} replace />
         ) : (
           <LoginPage />

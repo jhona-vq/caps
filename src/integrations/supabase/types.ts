@@ -14,16 +14,166 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      certificate_requests: {
+        Row: {
+          certificate_type: Database["public"]["Enums"]["certificate_type"]
+          created_at: string
+          date_processed: string | null
+          date_requested: string
+          id: string
+          notes: string | null
+          purpose: string
+          resident_id: string
+          resident_name: string
+          status: Database["public"]["Enums"]["request_status"]
+          valid_id_url: string | null
+        }
+        Insert: {
+          certificate_type: Database["public"]["Enums"]["certificate_type"]
+          created_at?: string
+          date_processed?: string | null
+          date_requested?: string
+          id?: string
+          notes?: string | null
+          purpose: string
+          resident_id: string
+          resident_name: string
+          status?: Database["public"]["Enums"]["request_status"]
+          valid_id_url?: string | null
+        }
+        Update: {
+          certificate_type?: Database["public"]["Enums"]["certificate_type"]
+          created_at?: string
+          date_processed?: string | null
+          date_requested?: string
+          id?: string
+          notes?: string | null
+          purpose?: string
+          resident_id?: string
+          resident_name?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          valid_id_url?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          age: number | null
+          contact: string | null
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
+          middle_name: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          age?: number | null
+          contact?: string | null
+          created_at?: string
+          first_name: string
+          id?: string
+          last_name: string
+          middle_name?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          age?: number | null
+          contact?: string | null
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          middle_name?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      request_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          request_id: string
+          status: Database["public"]["Enums"]["request_status"]
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          request_id: string
+          status: Database["public"]["Enums"]["request_status"]
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          request_id?: string
+          status?: Database["public"]["Enums"]["request_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_status_history_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "certificate_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "official" | "resident"
+      certificate_type:
+        | "Barangay Clearance"
+        | "Certificate of Indigency"
+        | "Certificate of Residency"
+        | "Certificate of Low Income"
+        | "Oath of Undertaking"
+        | "Business Permit"
+      request_status: "Pending" | "Approved" | "Denied"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +300,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["official", "resident"],
+      certificate_type: [
+        "Barangay Clearance",
+        "Certificate of Indigency",
+        "Certificate of Residency",
+        "Certificate of Low Income",
+        "Oath of Undertaking",
+        "Business Permit",
+      ],
+      request_status: ["Pending", "Approved", "Denied"],
+    },
   },
 } as const

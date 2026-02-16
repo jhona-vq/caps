@@ -1,133 +1,166 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Resident, Official, UserRole } from '@/types/barangay';
+import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
+
+export type UserRole = 'official' | 'resident';
+
+export interface Profile {
+  id: string;
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  middle_name?: string;
+  age?: number;
+  address?: string;
+  contact?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface AuthContextType {
-  currentUser: Resident | Official | null;
+  user: User | null;
+  profile: Profile | null;
   userRole: UserRole | null;
-  login: (email: string, password: string, role: UserRole) => boolean;
-  logout: () => void;
-  registerResident: (resident: Omit<Resident, 'id' | 'status' | 'createdAt'>) => boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  registerResident: (data: {
+    firstName: string;
+    lastName: string;
+    middleName?: string;
+    age: number;
+    address: string;
+    contact: string;
+    email: string;
+    password: string;
+  }) => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const mockOfficials: Official[] = [
-  { id: '1', name: 'Rose', email: 'rose@barangay.gov', password: 'admin123' },
-  { id: '2', name: 'Admin', email: 'admin@barangay.gov', password: 'admin123' },
-];
-
-const initialResidents: Resident[] = [
-  {
-    id: '1',
-    lastName: 'Dela Cruz',
-    firstName: 'Juan',
-    middleName: 'Perez',
-    age: 30,
-    address: '123 Rizal St, Palma-Urbano',
-    contact: '09171234567',
-    email: 'juan@email.com',
-    password: 'password123',
-    status: 'Active',
-    createdAt: new Date('2024-01-15'),
-  },
-  {
-    id: '2',
-    lastName: 'Santos',
-    firstName: 'Maria',
-    middleName: 'Garcia',
-    age: 25,
-    address: '456 Mabini St, Palma-Urbano',
-    contact: '09189876543',
-    email: 'maria@email.com',
-    password: 'password123',
-    status: 'Active',
-    createdAt: new Date('2024-02-20'),
-  },
-  {
-    id: '3',
-    lastName: 'Reyes',
-    firstName: 'Pedro',
-    age: 45,
-    address: '789 Luna St, Palma-Urbano',
-    contact: '09201234567',
-    email: 'pedro@email.com',
-    password: 'password123',
-    status: 'Active',
-    createdAt: new Date('2024-03-01'),
-  },
-];
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<Resident | Official | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [residents, setResidents] = useState<Resident[]>(initialResidents);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore session from localStorage on mount
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    if (data) setProfile(data as Profile);
+  };
+
+  const fetchRole = async (userId: string) => {
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+    if (data) setUserRole(data.role as UserRole);
+  };
+
   useEffect(() => {
-    const savedSession = localStorage.getItem('brgy_session');
-    if (savedSession) {
-      try {
-        const session = JSON.parse(savedSession);
-        setCurrentUser(session.user);
-        setUserRole(session.role);
-      } catch {
-        localStorage.removeItem('brgy_session');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        // Use setTimeout to avoid potential deadlock with Supabase auth
+        setTimeout(async () => {
+          await Promise.all([
+            fetchProfile(session.user.id),
+            fetchRole(session.user.id),
+          ]);
+          setIsLoading(false);
+        }, 0);
+      } else {
+        setUser(null);
+        setProfile(null);
+        setUserRole(null);
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        Promise.all([
+          fetchProfile(session.user.id),
+          fetchRole(session.user.id),
+        ]).then(() => setIsLoading(false));
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = (email: string, password: string, role: UserRole): boolean => {
-    if (role === 'official') {
-      const official = mockOfficials.find(
-        (o) => o.email.toLowerCase() === email.toLowerCase() && o.password === password
-      );
-      if (official) {
-        setCurrentUser(official);
-        setUserRole('official');
-        localStorage.setItem('brgy_session', JSON.stringify({ user: official, role: 'official' }));
-        return true;
-      }
-    } else {
-      const resident = residents.find(
-        (r) => r.email.toLowerCase() === email.toLowerCase() && r.password === password && r.status === 'Active'
-      );
-      if (resident) {
-        setCurrentUser(resident);
-        setUserRole('resident');
-        localStorage.setItem('brgy_session', JSON.stringify({ user: resident, role: 'resident' }));
-        return true;
-      }
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const registerResident = async (data: {
+    firstName: string;
+    lastName: string;
+    middleName?: string;
+    age: number;
+    address: string;
+    contact: string;
+    email: string;
+    password: string;
+  }) => {
+    const { data: authData, error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: {
+          first_name: data.firstName,
+          last_name: data.lastName,
+        },
+      },
+    });
+
+    if (error) return { success: false, error: error.message };
+
+    // Update the auto-created profile with additional info
+    if (authData.user) {
+      await supabase
+        .from('profiles')
+        .update({
+          middle_name: data.middleName || null,
+          age: data.age,
+          address: data.address,
+          contact: data.contact,
+          status: 'Active',
+        })
+        .eq('user_id', authData.user.id);
     }
-    return false;
-  };
 
-  const logout = () => {
-    setCurrentUser(null);
-    setUserRole(null);
-    localStorage.removeItem('brgy_session');
-  };
-
-  const registerResident = (residentData: Omit<Resident, 'id' | 'status' | 'createdAt'>): boolean => {
-    const exists = residents.some(
-      (r) => r.email.toLowerCase() === residentData.email.toLowerCase()
-    );
-    if (exists) return false;
-
-    const newResident: Resident = {
-      ...residentData,
-      id: Date.now().toString(),
-      status: 'Active',
-      createdAt: new Date(),
-    };
-    setResidents([...residents, newResident]);
-    return true;
+    // Sign out after registration so they can log in fresh
+    await supabase.auth.signOut();
+    return { success: true };
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, userRole, login, logout, registerResident, isLoading }}>
+    <AuthContext.Provider value={{
+      user,
+      profile,
+      userRole,
+      login,
+      logout,
+      registerResident,
+      isLoading,
+    }}>
       {children}
     </AuthContext.Provider>
   );
@@ -135,10 +168,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
-
-export { initialResidents };
