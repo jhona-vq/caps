@@ -64,43 +64,68 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        // Use setTimeout to avoid potential deadlock with Supabase auth
-        setTimeout(async () => {
+    let isMounted = true;
+
+    // Listener for ONGOING auth changes - does NOT control isLoading
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!isMounted) return;
+        if (session?.user) {
+          setUser(session.user);
+          // Defer to avoid deadlock, but don't touch isLoading here
+          setTimeout(async () => {
+            if (!isMounted) return;
+            await Promise.all([
+              fetchProfile(session.user.id),
+              fetchRole(session.user.id),
+            ]);
+          }, 0);
+        } else {
+          setUser(null);
+          setProfile(null);
+          setUserRole(null);
+        }
+      }
+    );
+
+    // INITIAL load - controls isLoading
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!isMounted) return;
+
+        if (session?.user) {
+          setUser(session.user);
           await Promise.all([
             fetchProfile(session.user.id),
             fetchRole(session.user.id),
           ]);
-          setIsLoading(false);
-        }, 0);
-      } else {
-        setUser(null);
-        setProfile(null);
-        setUserRole(null);
-        setIsLoading(false);
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-    });
+    };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user);
-        Promise.all([
-          fetchProfile(session.user.id),
-          fetchRole(session.user.id),
-        ]).then(() => setIsLoading(false));
-      } else {
-        setIsLoading(false);
-      }
-    });
+    initializeAuth();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { success: false, error: error.message };
+    
+    // Fetch role immediately after login so routing works
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      await Promise.all([
+        fetchProfile(authUser.id),
+        fetchRole(authUser.id),
+      ]);
+    }
     return { success: true };
   };
 
@@ -132,7 +157,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (error) return { success: false, error: error.message };
 
-    // Update the auto-created profile with additional info
     if (authData.user) {
       await supabase
         .from('profiles')
@@ -146,7 +170,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .eq('user_id', authData.user.id);
     }
 
-    // Sign out after registration so they can log in fresh
     await supabase.auth.signOut();
     return { success: true };
   };

@@ -20,7 +20,7 @@ const queryClient = new QueryClient();
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRole: 'official' | 'resident' }> = ({ children, allowedRole }) => {
   const { user, userRole, isLoading } = useAuth();
   
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
+  if (isLoading || (user && !userRole)) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user || userRole !== allowedRole) return <Navigate to="/" replace />;
   return <>{children}</>;
 };
@@ -28,7 +28,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRole: 'offici
 const AppRoutes = () => {
   const { user, userRole, isLoading } = useAuth();
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
+  if (isLoading || (user && !userRole)) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
 
   return (
     <Routes>
